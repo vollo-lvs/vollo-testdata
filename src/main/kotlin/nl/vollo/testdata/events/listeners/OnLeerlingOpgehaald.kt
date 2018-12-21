@@ -4,32 +4,23 @@ import nl.vollo.events.EventService
 import nl.vollo.events.kern.LeerlingOpgehaald
 import nl.vollo.events.testdata.LeerlingFotoVerkregen
 import nl.vollo.testdata.model.Leerling
+import nl.vollo.testdata.repository.LeerlingRepository
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.PNGTranscoder
-import org.apache.commons.io.IOUtils
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
-import org.springframework.util.MultiValueMap
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.client.exchange
-import org.springframework.web.client.getForEntity
-import org.springframework.web.util.UriBuilder
-import org.springframework.web.util.UriBuilderFactory
 import org.springframework.web.util.UriComponentsBuilder
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.FileOutputStream
 import java.io.InputStream
-import java.net.URI
-import java.net.URL
-import java.util.*
 import kotlin.random.Random
 
 @Component
@@ -40,6 +31,9 @@ class OnLeerlingOpgehaald {
 
     @Autowired
     private lateinit var restTemplate: RestTemplate
+
+    @Autowired
+    private lateinit var leerlingRepository: LeerlingRepository;
 
     var random: Random? = null;
 
@@ -88,11 +82,117 @@ class OnLeerlingOpgehaald {
     
     final var accessoriesTypes = mv(listOf(
             "Blank", "Prescription01", "Prescription02", "Round"
-    ));
+    ))
     
+    final var hairColors = mv(listOf(
+            "Auburn",
+            "Black",
+            "Blonde",
+            "BlondeGolden",
+            "Brown",
+            "BrownDark",
+            "PastelPink",
+            "Platinum",
+            "Red",
+            "SilverGray"
+    ))
+
+    final var clotheTypes = mv(listOf(
+            "BlazerShirt",
+            "BlazerSweater",
+            "CollarSweater",
+            "GraphicShirt",
+            "Hoodie",
+            "Overall",
+            "ShirtCrewNeck",
+            "ShirtScoopNeck",
+            "ShirtVNeck"
+    ))
+
+    final var clotheColors = mv(listOf(
+            "Black",
+            "Blue01",
+            "Blue02",
+            "Blue03",
+            "Gray01",
+            "Gray02",
+            "Heather",
+            "PastelBlue",
+            "PastelGreen",
+            "PastelOrange",
+            "PastelRed",
+            "PastelYellow",
+            "Pink",
+            "Red",
+            "White"
+    ))
+
+    final var eyeTypes = mv(listOf(
+                "Close",
+                "Cry",
+                "Default",
+                "Dizzy",
+                "EyeRoll",
+                "Happy",
+                "Side",
+                "Squint",
+                "Surprised",
+                "Wink",
+                "WinkWacky"
+    ), listOf(
+                "Close",
+                "Cry",
+                "Default",
+                "Dizzy",
+                "EyeRoll",
+                "Happy",
+                "Hearts",
+                "Side",
+                "Squint",
+                "Surprised",
+                "Wink",
+                "WinkWacky"
+    ))
+
+    final var eyebrowTypes = mv(listOf(
+            "Angry",
+            "AngryNatural",
+            "Default",
+            "DefaultNatural",
+            "FlatNatural",
+            "RaisedExcited",
+            "RaisedExcitedNatural",
+            "SadConcerned",
+            "SadConcernedNatural",
+            "UnibrowNatural",
+            "UpDown",
+            "UpDownNatural"
+    ))
+
+    final var mouthTypes = mv(listOf(
+            "Concerned",
+            "Default",
+            "Disbelief",
+            "Eating",
+            "Grimace",
+            "Sad",
+            "Serious",
+            "Smile",
+            "Tongue"
+    ))
+
+    final var skinColors = mv(listOf("Tanned", "Yellow", "Pale", "Light", "Brown", "DarkBrown", "Black"))
+
     final var attrLists: Map<String, Map<String, List<String>>> = mapOf(
             "topType" to topTypes,
-            "acccessoriesType" to accessoriesTypes
+            "acccessoriesType" to accessoriesTypes,
+            "hairColor" to hairColors,
+            "clotheType" to clotheTypes,
+            "clotheColor" to clotheColors,
+            "eyeType" to eyeTypes,
+            "eyebrowType" to eyebrowTypes,
+            "mouthType" to mouthTypes,
+            "skinColor" to skinColors
     )
 
     fun randomElem(list: List<String>): String =
@@ -122,7 +222,11 @@ class OnLeerlingOpgehaald {
         println("message: ${id} ${geslacht}")
 
         if (id == null || geslacht == null) {
-            print("ID of geslacht is null")
+            println("ID of geslacht is null")
+            return
+        }
+        if (leerlingRepository.findById(id).isPresent) {
+            println("Leerling ${id} al eerder opgehaald")
             return
         }
 
@@ -143,9 +247,12 @@ class OnLeerlingOpgehaald {
                 ByteArray::class)
         val foto = svg2png(ByteArrayInputStream(response.body))
 
-//        val foto = IOUtils.toByteArray(URL("http://avataaars.io/?avatarStyle=Circle"))
+        leerlingRepository.save(Leerling(id, geslacht))
 
-        eventService.send(LeerlingFotoVerkregen().apply { this.id = id; this.foto = foto })
+        eventService.send(LeerlingFotoVerkregen().apply {
+            this.id = id
+            this.foto = foto
+        })
     }
 
 }
