@@ -144,6 +144,51 @@
 				</dependencies>
 			</plugin>
 		</plugins>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ftp</artifactId>
+				<version>3.3.2</version>
+			</extension>
+		</extensions>
 	</build>
 
+	<repositories>
+		<repository>
+			<id>vollo-repo-releases</id>
+			<url>http://repo.vollo.nl/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>vollo-repo-snapshots</id>
+			<url>http://repo.vollo.nl/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<profiles>
+		<profile>
+			<id>ci</id>
+			<distributionManagement>
+				<repository>
+					<id>vollo-releases</id>
+					<url>ftp://repo.vollo.nl/repo.vollo.nl/releases</url>
+				</repository>
+				<snapshotRepository>
+					<id>vollo-snapshots</id>
+					<url>ftp://repo.vollo.nl/repo.vollo.nl/snapshots</url>
+				</snapshotRepository>
+			</distributionManagement>
+		</profile>
+	</profiles>
 </project>
